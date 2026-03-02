@@ -1,0 +1,7 @@
+-- Create isolated schemas for each module
+CREATE SCHEMA IF NOT EXISTS workspace;
+CREATE SCHEMA IF NOT EXISTS journey;
+CREATE SCHEMA IF NOT EXISTS ingestion;
+CREATE SCHEMA IF NOT EXISTS mapping;
+CREATE SCHEMA IF NOT EXISTS goals;
+CREATE SCHEMA IF NOT EXISTS sonar;

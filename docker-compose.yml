@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: journey
+      POSTGRES_PASSWORD: journey_dev
+      POSTGRES_DB: journey_mapper
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init_schemas.sql:/docker-entrypoint-initdb.d/01_schemas.sql
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://journey:journey_dev@db:5432/journey_mapper
+    depends_on:
+      - db
+    volumes:
+      - ./app:/code/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  pgdata:
