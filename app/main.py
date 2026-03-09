@@ -2,27 +2,20 @@
 
 import os
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
 
 from app.config import settings
 from app.middleware.error_handling import register_error_handlers
 
 
-class ApiKeyMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        # Only protect API routes — let frontend static files and health check through
-        if request.method == "OPTIONS" or not request.url.path.startswith("/api/"):
-            return await call_next(request)
-        if settings.api_key:
-            key = request.headers.get("X-API-Key", "")
-            if key != settings.api_key:
-                return JSONResponse({"detail": "Unauthorized"}, status_code=401)
-        return await call_next(request)
+async def verify_api_key(request: Request) -> None:
+    if not settings.api_key:
+        return
+    key = request.headers.get("X-API-Key", "")
+    if key != settings.api_key:
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 def create_app() -> FastAPI:
@@ -40,11 +33,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.add_middleware(ApiKeyMiddleware)
 
     register_error_handlers(app)
 
-    # --- Register module routers ---
+    # --- Register module routers (all protected by API key) ---
     from app.workspace.router import router as workspace_router
     from app.journey.router import router as journey_router
     from app.ingestion.router import router as ingestion_router
@@ -52,13 +44,14 @@ def create_app() -> FastAPI:
     from app.goals.router import router as goals_router
     from app.sonar.router import router as sonar_router
 
+    api_deps = [Depends(verify_api_key)]
     prefix = settings.api_prefix
-    app.include_router(workspace_router, prefix=f"{prefix}/workspaces", tags=["workspace"])
-    app.include_router(journey_router, prefix=f"{prefix}/journey", tags=["journey"])
-    app.include_router(ingestion_router, prefix=f"{prefix}/ingestion", tags=["ingestion"])
-    app.include_router(mapping_router, prefix=f"{prefix}/mapping", tags=["mapping"])
-    app.include_router(goals_router, prefix=f"{prefix}/goals", tags=["goals"])
-    app.include_router(sonar_router, prefix=f"{prefix}/sonar", tags=["sonar"])
+    app.include_router(workspace_router, prefix=f"{prefix}/workspaces", tags=["workspace"], dependencies=api_deps)
+    app.include_router(journey_router, prefix=f"{prefix}/journey", tags=["journey"], dependencies=api_deps)
+    app.include_router(ingestion_router, prefix=f"{prefix}/ingestion", tags=["ingestion"], dependencies=api_deps)
+    app.include_router(mapping_router, prefix=f"{prefix}/mapping", tags=["mapping"], dependencies=api_deps)
+    app.include_router(goals_router, prefix=f"{prefix}/goals", tags=["goals"], dependencies=api_deps)
+    app.include_router(sonar_router, prefix=f"{prefix}/sonar", tags=["sonar"], dependencies=api_deps)
 
     # --- Wire up event subscriptions ---
     from app.events import event_bus  # noqa: F811
