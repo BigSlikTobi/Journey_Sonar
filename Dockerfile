@@ -18,4 +18,5 @@ COPY --from=backend /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=backend /usr/local/bin /usr/local/bin
 COPY app/ app/
 COPY --from=frontend /build/dist frontend/dist
+RUN mkdir -p /data
 CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
