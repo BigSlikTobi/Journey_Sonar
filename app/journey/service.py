@@ -10,13 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.common.exceptions import CycleDetectedError, NotFoundError, ValidationError
 from app.common.types import NodeType
 from app.journey.models import Edge, Node
+from app.journey.schemas import EdgeUpdate
 from app.journey.queries import (
     detect_cycle_in_edges,
     detect_cycle_in_parents,
     get_all_descendants,
     get_ancestor_chain,
 )
-from app.journey.schemas import EdgeCreate, NodeCreate, NodeMatch, NodeUpdate
+from app.journey.schemas import EdgeCreate, NodeCreate, NodeMatch, NodeRead, NodeTree, NodeUpdate
+from app.journey.tree import build_tree
 
 
 class JourneyService:
@@ -152,6 +154,23 @@ class JourneyService:
         )
         return list(result.scalars().all())
 
+    async def update_edge(
+        self, session: AsyncSession, workspace_id: uuid.UUID, edge_id: uuid.UUID, data: EdgeUpdate
+    ) -> Edge:
+        edge = await session.get(Edge, edge_id)
+        if not edge or edge.workspace_id != workspace_id:
+            raise NotFoundError("Edge", edge_id)
+        if data.condition is not None:
+            edge.condition = data.condition
+        if data.is_fallback is not None:
+            edge.is_fallback = data.is_fallback
+        if data.weight is not None:
+            edge.weight = data.weight
+        if data.metadata is not None:
+            edge.metadata_ = data.metadata
+        await session.flush()
+        return edge
+
     async def delete_edge(
         self, session: AsyncSession, workspace_id: uuid.UUID, edge_id: uuid.UUID
     ) -> None:
@@ -160,6 +179,49 @@ class JourneyService:
             raise NotFoundError("Edge", edge_id)
         await session.delete(edge)
         await session.flush()
+
+    # --- Tree retrieval ---
+
+    async def list_journey_roots(
+        self, session: AsyncSession, workspace_id: uuid.UUID
+    ) -> list[Node]:
+        """Return all JOURNEY_ROOT nodes for the workspace."""
+        result = await session.execute(
+            select(Node).where(
+                Node.workspace_id == workspace_id,
+                Node.type == NodeType.JOURNEY_ROOT,
+            ).order_by(Node.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def get_journey_tree(
+        self, session: AsyncSession, workspace_id: uuid.UUID, root_id: uuid.UUID
+    ) -> NodeTree:
+        """Build and return the full tree for a journey root."""
+        root = await self.get_node(session, workspace_id, root_id)
+        descendant_rows = await get_all_descendants(session, workspace_id, root_id)
+
+        # Collect all node IDs (root + descendants)
+        # CTE returns id as hex strings; convert back to UUID for ORM queries
+        all_ids = [root_id] + [uuid.UUID(row["id"]) for row in descendant_rows]
+
+        # Fetch full Node objects
+        result = await session.execute(
+            select(Node).where(Node.id.in_(all_ids))
+        )
+        nodes = [NodeRead.model_validate(n) for n in result.scalars().all()]
+
+        # Fetch edges between these nodes
+        result = await session.execute(
+            select(Edge).where(
+                Edge.workspace_id == workspace_id,
+                Edge.source_node_id.in_(all_ids),
+            )
+        )
+        from app.journey.schemas import EdgeRead
+        edges = [EdgeRead.model_validate(e) for e in result.scalars().all()]
+
+        return build_tree(nodes, edges, root_id)
 
     # --- Input schema matching (used by Mapping Engine) ---
 

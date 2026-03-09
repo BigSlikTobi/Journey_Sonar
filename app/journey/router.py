@@ -2,26 +2,74 @@
 
 from __future__ import annotations
 
+import json
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.schemas import WorkspaceContext
 from app.database import get_session
+from app.journey.import_schemas import JourneyImport
+from app.journey.importer import JourneyImporter
 from app.journey.schemas import (
     EdgeCreate,
     EdgeRead,
+    EdgeUpdate,
     NodeCreate,
     NodeMatch,
     NodeRead,
+    NodeTree,
     NodeUpdate,
 )
 from app.journey.service import JourneyService
-from app.workspace.dependencies import require_workspace
+from app.workspace.default import default_workspace
 
 router = APIRouter()
 _service = JourneyService()
+_importer = JourneyImporter()
+
+
+# --- Import / Tree endpoints ---
+
+
+@router.post("/import", response_model=NodeTree, status_code=201)
+async def import_journey(
+    file: UploadFile,
+    ctx: WorkspaceContext = Depends(default_workspace),
+    session: AsyncSession = Depends(get_session),
+) -> NodeTree:
+    """Upload a JSON file and import it as a journey tree."""
+    content = await file.read()
+    try:
+        raw = json.loads(content)
+    except json.JSONDecodeError as e:
+        from app.common.exceptions import ValidationError
+        raise ValidationError(f"Invalid JSON file: {e}")
+    data = JourneyImport.model_validate(raw)
+    root = await _importer.import_journey(session, ctx.workspace_id, data)
+    await session.commit()
+    return await _service.get_journey_tree(session, ctx.workspace_id, root.id)
+
+
+@router.get("/roots", response_model=list[NodeRead])
+async def list_roots(
+    ctx: WorkspaceContext = Depends(default_workspace),
+    session: AsyncSession = Depends(get_session),
+) -> list[NodeRead]:
+    """List all JOURNEY_ROOT nodes for the workspace."""
+    roots = await _service.list_journey_roots(session, ctx.workspace_id)
+    return [NodeRead.model_validate(r) for r in roots]
+
+
+@router.get("/tree/{root_id}", response_model=NodeTree)
+async def get_tree(
+    root_id: UUID,
+    ctx: WorkspaceContext = Depends(default_workspace),
+    session: AsyncSession = Depends(get_session),
+) -> NodeTree:
+    """Return the full tree for a journey root."""
+    return await _service.get_journey_tree(session, ctx.workspace_id, root_id)
 
 
 # --- Node endpoints ---
@@ -30,7 +78,7 @@ _service = JourneyService()
 @router.post("/nodes", response_model=NodeRead, status_code=201)
 async def create_node(
     data: NodeCreate,
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> NodeRead:
     node = await _service.create_node(session, ctx.workspace_id, data)
@@ -41,7 +89,7 @@ async def create_node(
 @router.get("/nodes/{node_id}", response_model=NodeRead)
 async def get_node(
     node_id: UUID,
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> NodeRead:
     node = await _service.get_node(session, ctx.workspace_id, node_id)
@@ -52,18 +100,19 @@ async def get_node(
 async def update_node(
     node_id: UUID,
     data: NodeUpdate,
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> NodeRead:
     node = await _service.update_node(session, ctx.workspace_id, node_id, data)
     await session.commit()
+    await session.refresh(node)
     return NodeRead.model_validate(node)
 
 
 @router.delete("/nodes/{node_id}", status_code=204)
 async def delete_node(
     node_id: UUID,
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> None:
     await _service.delete_node(session, ctx.workspace_id, node_id)
@@ -73,7 +122,7 @@ async def delete_node(
 @router.get("/nodes/{node_id}/sub-journey", response_model=list[NodeRead])
 async def get_sub_journey(
     node_id: UUID,
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> list[NodeRead]:
     children = await _service.get_sub_journey(session, ctx.workspace_id, node_id)
@@ -83,7 +132,7 @@ async def get_sub_journey(
 @router.get("/nodes/{node_id}/ancestors")
 async def get_ancestors(
     node_id: UUID,
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> list[dict]:
     return await _service.get_ancestor_chain(session, ctx.workspace_id, node_id)
@@ -91,11 +140,10 @@ async def get_ancestors(
 
 @router.get("/nodes/match-inputs", response_model=list[NodeMatch])
 async def match_inputs(
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
     payload: str = Query(..., description="JSON-encoded data payload to match"),
 ) -> list[NodeMatch]:
-    import json
     data_payload = json.loads(payload)
     return await _service.match_node_by_input(session, ctx.workspace_id, data_payload)
 
@@ -106,7 +154,7 @@ async def match_inputs(
 @router.post("/edges", response_model=EdgeRead, status_code=201)
 async def create_edge(
     data: EdgeCreate,
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> EdgeRead:
     edge = await _service.create_edge(session, ctx.workspace_id, data)
@@ -117,17 +165,30 @@ async def create_edge(
 @router.get("/edges", response_model=list[EdgeRead])
 async def get_edges(
     source: UUID = Query(..., description="Source node ID"),
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> list[EdgeRead]:
     edges = await _service.get_outgoing_edges(session, ctx.workspace_id, source)
     return [EdgeRead.model_validate(e) for e in edges]
 
 
+@router.patch("/edges/{edge_id}", response_model=EdgeRead)
+async def update_edge(
+    edge_id: UUID,
+    data: EdgeUpdate,
+    ctx: WorkspaceContext = Depends(default_workspace),
+    session: AsyncSession = Depends(get_session),
+) -> EdgeRead:
+    edge = await _service.update_edge(session, ctx.workspace_id, edge_id, data)
+    await session.commit()
+    await session.refresh(edge)
+    return EdgeRead.model_validate(edge)
+
+
 @router.delete("/edges/{edge_id}", status_code=204)
 async def delete_edge(
     edge_id: UUID,
-    ctx: WorkspaceContext = Depends(require_workspace),
+    ctx: WorkspaceContext = Depends(default_workspace),
     session: AsyncSession = Depends(get_session),
 ) -> None:
     await _service.delete_edge(session, ctx.workspace_id, edge_id)

@@ -1,0 +1,480 @@
+{
+  "journeyName": "deinePflege Customer Journey",
+  "version": "current-mapped-state",
+  "stages": [
+    {
+      "title": "Acquisition",
+      "items": [
+        {
+          "touchpoint": "Search for Care Level",
+          "businessRule": "IF search intent is unrelated THEN do not force the application journey\nELSE IF user lands on the wrong page variant THEN redirect to the relevant content\nELSE IF user intent is informational only THEN allow educational browsing without forcing conversion\nELSE help users with care intent from Keyword Cluster discover deinePflege via Landing URL in the right Locale context and reach the correct entry point based on Search Intent, Traffic Source, and Device.",
+          "feature": "help users with care intent from Keyword Cluster discover deinePflege via Landing URL in the right Locale context and reach the correct entry point based on Search Intent, Traffic Source, and Device.",
+          "dataPoints": [
+            "Traffic Source",
+            "Search Intent",
+            "Keyword Cluster",
+            "Landing URL",
+            "Device",
+            "Locale"
+          ],
+          "edgeCases": [
+            "IF search intent is unrelated THEN do not force the application journey.",
+            "IF user lands on the wrong page variant THEN redirect to the relevant content.",
+            "IF user intent is informational only THEN allow educational browsing without forcing conversion."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "View deinePflege Landing Page",
+          "businessRule": "IF user is not eligible THEN do not push them into the main application flow\nELSE IF user is a caregiver instead of the patient THEN adapt guidance to their role\nELSE IF user arrived by mistake THEN offer a simple exit path\nELSE show Products, Services, Trust Signals, and Eligibility Hints on the landing page and guide the user to the Primary CTA or Support Contact path.",
+          "feature": "show Products, Services, Trust Signals, and Eligibility Hints on the landing page and guide the user to the Primary CTA or Support Contact path.",
+          "dataPoints": [
+            "Products",
+            "Services",
+            "Primary CTA",
+            "Trust Signals",
+            "Eligibility Hints",
+            "Support Contact"
+          ],
+          "edgeCases": [
+            "IF user is not eligible THEN do not push them into the main application flow.",
+            "IF user is a caregiver instead of the patient THEN adapt guidance to their role.",
+            "IF user arrived by mistake THEN offer a simple exit path."
+          ],
+          "emails": []
+        }
+      ]
+    },
+    {
+      "title": "ICA Journey",
+      "items": [
+        {
+          "touchpoint": "Start ICA",
+          "businessRule": "IF the session breaks unexpectedly THEN preserve the saved state\nELSE IF the user starts multiple times THEN avoid duplicate open records where possible\nELSE IF no identifiable contact data exists yet THEN keep the journey resumable without email dependency\nELSE create the ICA Record, capture Session ID, User ID / Anonymous ID, Start Timestamp, and Channel Source, and keep the Application Status resumable.",
+          "feature": "create the ICA Record, capture Session ID, User ID / Anonymous ID, Start Timestamp, and Channel Source, and keep the Application Status resumable.",
+          "dataPoints": [
+            "ICA Record",
+            "Session ID",
+            "User ID / Anonymous ID",
+            "Start Timestamp",
+            "Channel Source",
+            "Application Status"
+          ],
+          "edgeCases": [
+            "IF the session breaks unexpectedly THEN preserve the saved state.",
+            "IF the user starts multiple times THEN avoid duplicate open records where possible.",
+            "IF no identifiable contact data exists yet THEN keep the journey resumable without email dependency."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Drop-off mid ICA",
+          "businessRule": "IF the user already completed ICA in another session THEN stop recovery logic\nELSE IF technical errors caused the drop-off THEN distinguish operational issues from user abandonment\nELSE IF contact data is missing THEN do not rely on email-based recovery only\nELSE keep the Application Status recoverable by using Last Completed Step, Last Activity Timestamp, Reminder Window, Email Availability, and Error Signals.",
+          "feature": "keep the Application Status recoverable by using Last Completed Step, Last Activity Timestamp, Reminder Window, Email Availability, and Error Signals.",
+          "dataPoints": [
+            "ICA Status",
+            "Last Completed Step",
+            "Last Activity Timestamp",
+            "Reminder Window",
+            "Email Availability",
+            "Error Signals"
+          ],
+          "edgeCases": [
+            "IF the user already completed ICA in another session THEN stop recovery logic.",
+            "IF technical errors caused the drop-off THEN distinguish operational issues from user abandonment.",
+            "IF contact data is missing THEN do not rely on email-based recovery only."
+          ],
+          "emails": [
+            {
+              "name": "ICA-Antrag-Erinnerung1",
+              "subject": "Stelle deinen Pflegeantrag fertig."
+            },
+            {
+              "name": "ICA-Antrag-Erinnerung2_Hilfe",
+              "subject": "Benötigst du Hilfe beim Ausfüllen deines Antrags?"
+            },
+            {
+              "name": "ICA-Antrag-Erinnerung3_Leistungen",
+              "subject": "Nutze was dir zusteht und beantrage einen Pflegegrad."
+            },
+            {
+              "name": "ICA-Antrag-Erinnerung4_Ratgeber",
+              "subject": "Ratgeber / informative Artikel rund um das Thema Pflege"
+            }
+          ]
+        },
+        {
+          "touchpoint": "Complete ICA",
+          "businessRule": "IF mandatory data is missing THEN do not submit\nELSE IF duplicate data or duplicate submission is detected THEN prevent double processing\nELSE IF validation fails after final click THEN keep the application incomplete and visible for correction\nELSE validate Mandatory Form Fields, Consent, Insurer Data, and Customer Data and set Submission Status based on the Validation Result.",
+          "feature": "validate Mandatory Form Fields, Consent, Insurer Data, and Customer Data and set Submission Status based on the Validation Result.",
+          "dataPoints": [
+            "Mandatory Form Fields",
+            "Consent",
+            "Insurer Data",
+            "Customer Data",
+            "Submission Status",
+            "Validation Result"
+          ],
+          "edgeCases": [
+            "IF mandatory data is missing THEN do not submit.",
+            "IF duplicate data or duplicate submission is detected THEN prevent double processing.",
+            "IF validation fails after final click THEN keep the application incomplete and visible for correction."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Application Sent",
+          "businessRule": "IF submission fails silently THEN do not move the customer forward incorrectly\nELSE IF the account is not accessible after submission THEN show fallback support options\nELSE IF the same application is re-sent THEN avoid duplicate case creation\nELSE store Submission Timestamp, expose Account Access, link the Case ID, and move the user into the correct Journey Status based on Submission Status and Support Contact.",
+          "feature": "store Submission Timestamp, expose Account Access, link the Case ID, and move the user into the correct Journey Status based on Submission Status and Support Contact.",
+          "dataPoints": [
+            "Submission Timestamp",
+            "Submission Status",
+            "Account Access",
+            "Support Contact",
+            "Case ID",
+            "Journey Status"
+          ],
+          "edgeCases": [
+            "IF submission fails silently THEN do not move the customer forward incorrectly.",
+            "IF the account is not accessible after submission THEN show fallback support options.",
+            "IF the same application is re-sent THEN avoid duplicate case creation."
+          ],
+          "emails": [
+            {
+              "name": "ICA-P-A1.1-Application-sent",
+              "subject": "Ihr Antrag auf einen Pflegegrad wurde versendet!"
+            },
+            {
+              "name": "ICA_Nach_Antragsuebermittlung - PROD",
+              "subject": "Bereite dich optimal auf deinen Begutachtungstermin für einen Pflegegrad vor."
+            },
+            {
+              "name": "ICA_Nach_Antragsuebermittlung - PROD",
+              "subject": "Hast du bereits eine Rückmeldung zu deinem Pflegegrad-Antrag erhalten?"
+            },
+            {
+              "name": "Review request",
+              "subject": "Bewerte die Antragsstellung mit deinePflege"
+            }
+          ]
+        },
+        {
+          "touchpoint": "Book Care Course",
+          "businessRule": "IF no slots are available THEN do not present a broken booking experience\nELSE IF the user is not yet in the correct stage THEN keep booking locked\nELSE IF booking data is outdated or expired THEN require a refreshed slot selection\nELSE make care-course booking available through Booking Link and Available Slots for users with the right Booking Eligibility, Assessment Context, and Course Status after ICA Submission Status.",
+          "feature": "make care-course booking available through Booking Link and Available Slots for users with the right Booking Eligibility, Assessment Context, and Course Status after ICA Submission Status.",
+          "dataPoints": [
+            "ICA Submission Status",
+            "Booking Eligibility",
+            "Booking Link",
+            "Available Slots",
+            "Assessment Context",
+            "Course Status"
+          ],
+          "edgeCases": [
+            "IF no slots are available THEN do not present a broken booking experience.",
+            "IF the user is not yet in the correct stage THEN keep booking locked.",
+            "IF booking data is outdated or expired THEN require a refreshed slot selection."
+          ],
+          "emails": [
+            {
+              "name": "ICA_Nach_Antragsuebermittlung - PROD",
+              "subject": "Bereite dich optimal auf deinen Begutachtungstermin für einen Pflegegrad vor."
+            },
+            {
+              "name": "ICA_Nach_Antragsuebermittlung - PROD",
+              "subject": "Hast du bereits eine Rückmeldung zu deinem Pflegegrad-Antrag erhalten?"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Care Level Unlock",
+      "items": [
+        {
+          "touchpoint": "Enter Care Level / Inform via Telesales",
+          "businessRule": "IF the entered care level is invalid or incomplete THEN do not unlock services\nELSE IF telesales enters the result manually THEN preserve source traceability\nELSE IF a user updates an existing care level THEN re-evaluate downstream eligibility\nELSE validate and store the Care Level with Source of Entry, Entry Timestamp, Validation Status, Customer ID, and Eligibility Status for the correct customer.",
+          "feature": "validate and store the Care Level with Source of Entry, Entry Timestamp, Validation Status, Customer ID, and Eligibility Status for the correct customer.",
+          "dataPoints": [
+            "Care Level",
+            "Source of Entry",
+            "Entry Timestamp",
+            "Validation Status",
+            "Customer ID",
+            "Eligibility Status"
+          ],
+          "edgeCases": [
+            "IF the entered care level is invalid or incomplete THEN do not unlock services.",
+            "IF telesales enters the result manually THEN preserve source traceability.",
+            "IF a user updates an existing care level THEN re-evaluate downstream eligibility."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Never inform us of Care Level",
+          "businessRule": "IF insurer decision has not yet arrived THEN avoid treating the user as inactive too early\nELSE IF the care level was entered through another channel and not synced yet THEN avoid false blocking\nELSE IF the customer enters the result later THEN reactivate the correct next step automatically\nELSE keep the user in a blocked state using Care Level Status, Days Since ICA Submission, Follow-up Window, Reminder Status, Customer State, and Eligibility Block Flag until the care level is recorded.",
+          "feature": "keep the user in a blocked state using Care Level Status, Days Since ICA Submission, Follow-up Window, Reminder Status, Customer State, and Eligibility Block Flag until the care level is recorded.",
+          "dataPoints": [
+            "Care Level Status",
+            "Days Since ICA Submission",
+            "Follow-up Window",
+            "Reminder Status",
+            "Customer State",
+            "Eligibility Block Flag"
+          ],
+          "edgeCases": [
+            "IF insurer decision has not yet arrived THEN avoid treating the user as inactive too early.",
+            "IF the care level was entered through another channel and not synced yet THEN avoid false blocking.",
+            "IF the customer enters the result later THEN reactivate the correct next step automatically."
+          ],
+          "emails": [
+            {
+              "name": "Care level reminder 1",
+              "subject": "Trage das Ergebnis deiner Begutachtung ein."
+            },
+            {
+              "name": "Care level reminder 2",
+              "subject": "Pflegegrad eintragen und Vorteile entdecken."
+            }
+          ]
+        },
+        {
+          "touchpoint": "View App Homescreen",
+          "businessRule": "IF no care level is known THEN do not prioritize blocked services as if the user were eligible\nELSE IF multiple services are eligible THEN rank the next best offer consistently\nELSE IF the user already converted for a service THEN suppress redundant promotion\nELSE prioritize the next best service on the homescreen using Care Level, Eligibility Matrix, Customer Status, Available Services, Previous Actions, and Homescreen Priority Logic.",
+          "feature": "prioritize the next best service on the homescreen using Care Level, Eligibility Matrix, Customer Status, Available Services, Previous Actions, and Homescreen Priority Logic.",
+          "dataPoints": [
+            "Care Level",
+            "Eligibility Matrix",
+            "Customer Status",
+            "Available Services",
+            "Previous Actions",
+            "Homescreen Priority Logic"
+          ],
+          "edgeCases": [
+            "IF no care level is known THEN do not prioritize blocked services as if the user were eligible.",
+            "IF multiple services are eligible THEN rank the next best offer consistently.",
+            "IF the user already converted for a service THEN suppress redundant promotion."
+          ],
+          "emails": [
+            {
+              "name": "ICA_Promotion_von_Leistungen - PROD",
+              "subject": "Service promotion journey starts from the app / care level state"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Service Conversion",
+      "items": [
+        {
+          "touchpoint": "Apply for CBA",
+          "businessRule": "IF the customer already has another provider THEN clarify transfer or block duplicate onboarding\nELSE IF required CBA data is incomplete THEN do not submit\nELSE IF the customer is not eligible THEN surface the blocker clearly instead of failing silently\nELSE enable eligible users with Care Level, CBA Eligibility, Address, Insurer, and Current Provider to move the CBA Application Status forward.",
+          "feature": "enable eligible users with Care Level, CBA Eligibility, Address, Insurer, and Current Provider to move the CBA Application Status forward.",
+          "dataPoints": [
+            "Care Level",
+            "CBA Eligibility",
+            "Address",
+            "Insurer",
+            "Current Provider",
+            "CBA Application Status"
+          ],
+          "edgeCases": [
+            "IF the customer already has another provider THEN clarify transfer or block duplicate onboarding.",
+            "IF required CBA data is incomplete THEN do not submit.",
+            "IF the customer is not eligible THEN surface the blocker clearly instead of failing silently."
+          ],
+          "emails": [
+            {
+              "name": "ICA-Promotion-CBA",
+              "subject": "CBA promotion mail"
+            }
+          ]
+        },
+        {
+          "touchpoint": "Stay with deinePflege as carebox provider",
+          "businessRule": "IF provider changes away from deinePflege THEN do not count the customer as retained\nELSE IF approval exists but service is not active yet THEN keep the customer out of active retention\nELSE IF cancellation occurs after approval THEN move the case into churn or save flow\nELSE mark the user as retained carebox customer using CBA Approval Status, Provider Status, Service Active Flag, Shipment History, Retention Status, and Churn Status.",
+          "feature": "mark the user as retained carebox customer using CBA Approval Status, Provider Status, Service Active Flag, Shipment History, Retention Status, and Churn Status.",
+          "dataPoints": [
+            "CBA Approval Status",
+            "Provider Status",
+            "Service Active Flag",
+            "Shipment History",
+            "Retention Status",
+            "Churn Status"
+          ],
+          "edgeCases": [
+            "IF provider changes away from deinePflege THEN do not count the customer as retained.",
+            "IF approval exists but service is not active yet THEN keep the customer out of active retention.",
+            "IF cancellation occurs after approval THEN move the case into churn or save flow."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Apply for HES",
+          "businessRule": "IF emergency contacts are missing THEN do not submit a final HES application\nELSE IF living situation or setup requirements make HES unsuitable THEN stop the standard flow\nELSE IF mandatory HES data is incomplete THEN keep the case pending instead of submitted\nELSE create the HES application for users with Care Level, HES Eligibility, Address, Emergency Contacts, Living Situation, and a valid HES Application Status.",
+          "feature": "create the HES application for users with Care Level, HES Eligibility, Address, Emergency Contacts, Living Situation, and a valid HES Application Status.",
+          "dataPoints": [
+            "Care Level",
+            "HES Eligibility",
+            "Address",
+            "Emergency Contacts",
+            "Living Situation",
+            "HES Application Status"
+          ],
+          "edgeCases": [
+            "IF emergency contacts are missing THEN do not submit a final HES application.",
+            "IF living situation or setup requirements make HES unsuitable THEN stop the standard flow.",
+            "IF mandatory HES data is incomplete THEN keep the case pending instead of submitted."
+          ],
+          "emails": [
+            {
+              "name": "ICA-Promotion-HES",
+              "subject": "Sicher Zuhause mit einem Hausnotruf"
+            }
+          ]
+        },
+        {
+          "touchpoint": "Receive Insurance Approval",
+          "businessRule": "IF approval is partial or conditional THEN do not start the full standard fulfillment path blindly\nELSE IF rejection reason is missing THEN keep the case in clarification instead of closing too early\nELSE IF the insurer response is duplicated or conflicting THEN require case review before fulfillment\nELSE move the case into the right path using Insurer Decision, Decision Date, Service Type, Approval Status, Rejection Reason, and Fulfillment Status.",
+          "feature": "move the case into the right path using Insurer Decision, Decision Date, Service Type, Approval Status, Rejection Reason, and Fulfillment Status.",
+          "dataPoints": [
+            "Insurer Decision",
+            "Decision Date",
+            "Service Type",
+            "Approval Status",
+            "Rejection Reason",
+            "Fulfillment Status"
+          ],
+          "edgeCases": [
+            "IF approval is partial or conditional THEN do not start the full standard fulfillment path blindly.",
+            "IF rejection reason is missing THEN keep the case in clarification instead of closing too early.",
+            "IF the insurer response is duplicated or conflicting THEN require case review before fulfillment."
+          ],
+          "emails": []
+        }
+      ]
+    },
+    {
+      "title": "HES Fulfillment",
+      "items": [
+        {
+          "touchpoint": "Receive HES Device",
+          "businessRule": "IF shipment is delayed or fails THEN do not start standard activation timing\nELSE IF address is invalid THEN block delivery-dependent activation logic\nELSE IF the device shipment is cancelled THEN do not continue onboarding\nELSE prepare activation using HES Approval Status, Shipment Status, Device ID, Tracking Data, Delivery Address, and Activation Readiness Status.",
+          "feature": "prepare activation using HES Approval Status, Shipment Status, Device ID, Tracking Data, Delivery Address, and Activation Readiness Status.",
+          "dataPoints": [
+            "HES Approval Status",
+            "Shipment Status",
+            "Device ID",
+            "Tracking Data",
+            "Delivery Address",
+            "Activation Readiness Status"
+          ],
+          "edgeCases": [
+            "IF shipment is delayed or fails THEN do not start standard activation timing.",
+            "IF address is invalid THEN block delivery-dependent activation logic.",
+            "IF the device shipment is cancelled THEN do not continue onboarding."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Cancel before receiving device",
+          "businessRule": "IF cancellation happens after delivery instead of before THEN handle it in a different service state\nELSE IF the device was already dispatched irreversibly THEN ensure reverse logistics or exception handling is triggered\nELSE IF no reason code exists THEN allow cancellation but flag the record for review\nELSE stop onboarding based on Cancellation Status, Cancellation Date, Shipment Status, Device Delivery Status, Reason Code, and Onboarding Status.",
+          "feature": "stop onboarding based on Cancellation Status, Cancellation Date, Shipment Status, Device Delivery Status, Reason Code, and Onboarding Status.",
+          "dataPoints": [
+            "Cancellation Status",
+            "Cancellation Date",
+            "Shipment Status",
+            "Device Delivery Status",
+            "Reason Code",
+            "Onboarding Status"
+          ],
+          "edgeCases": [
+            "IF cancellation happens after delivery instead of before THEN handle it in a different service state.",
+            "IF the device was already dispatched irreversibly THEN ensure reverse logistics or exception handling is triggered.",
+            "IF no reason code exists THEN allow cancellation but flag the record for review."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Activate HES Device",
+          "businessRule": "IF no HES contract exists at activation time THEN do not complete activation-based downstream actions\nELSE IF contract start date is later than activation date THEN do not treat the activation as fully valid\nELSE IF customer or partner linkage is missing THEN block activation completion and raise an error\nELSE IF the activation event was already processed THEN do not create duplicate downstream records\nELSE recognize successful HES activation using HES Device, Activation Event, Customer Account, Partner Account, HES Contract, Contract Start Date, and Activation Date.",
+          "feature": "recognize successful HES activation using HES Device, Activation Event, Customer Account, Partner Account, HES Contract, Contract Start Date, and Activation Date.",
+          "dataPoints": [
+            "HES Device",
+            "Activation Event",
+            "Customer Account",
+            "Partner Account",
+            "HES Contract",
+            "Contract Start Date",
+            "Activation Date"
+          ],
+          "edgeCases": [
+            "IF no HES contract exists at activation time THEN do not complete activation-based downstream actions.",
+            "IF contract start date is later than activation date THEN do not treat the activation as fully valid.",
+            "IF customer or partner linkage is missing THEN block activation completion and raise an error.",
+            "IF the activation event was already processed THEN do not create duplicate downstream records."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Never activate device",
+          "businessRule": "IF delivery confirmation is missing THEN do not start the inactivity timer prematurely\nELSE IF the device is activated late THEN resume the valid onboarding journey instead of creating a new case\nELSE IF the device is returned before activation THEN stop the standard inactive-device flow\nELSE keep the case in the right inactivity state using Device Delivery Date, Activation Event, Activation Window, Inactive Device Flag, Customer Status, and Support Status.",
+          "feature": "keep the case in the right inactivity state using Device Delivery Date, Activation Event, Activation Window, Inactive Device Flag, Customer Status, and Support Status.",
+          "dataPoints": [
+            "Device Delivery Date",
+            "Activation Event",
+            "Activation Window",
+            "Inactive Device Flag",
+            "Customer Status",
+            "Support Status"
+          ],
+          "edgeCases": [
+            "IF delivery confirmation is missing THEN do not start the inactivity timer prematurely.",
+            "IF the device is activated late THEN resume the valid onboarding journey instead of creating a new case.",
+            "IF the device is returned before activation THEN stop the standard inactive-device flow."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Setup HES Emergency Plan and Contract",
+          "businessRule": "IF emergency contacts are incomplete THEN do not finalize onboarding\nELSE IF contract data is incomplete or invalid THEN keep the case pending\nELSE IF setup is partially complete for a long time THEN retain the pending state instead of marking success too early\nELSE finalize onboarding with Activation Status, Emergency Plan, Emergency Contacts, Contract Status, Consent Status, and Setup Completion Status.",
+          "feature": "finalize onboarding with Activation Status, Emergency Plan, Emergency Contacts, Contract Status, Consent Status, and Setup Completion Status.",
+          "dataPoints": [
+            "Activation Status",
+            "Emergency Plan",
+            "Emergency Contacts",
+            "Contract Status",
+            "Consent Status",
+            "Setup Completion Status"
+          ],
+          "edgeCases": [
+            "IF emergency contacts are incomplete THEN do not finalize onboarding.",
+            "IF contract data is incomplete or invalid THEN keep the case pending.",
+            "IF setup is partially complete for a long time THEN retain the pending state instead of marking success too early."
+          ],
+          "emails": []
+        },
+        {
+          "touchpoint": "Stay with deinePflege as HES provider",
+          "businessRule": "IF onboarding is incomplete THEN do not mark the customer as retained\nELSE IF service becomes inactive after activation THEN update the case out of active retention\nELSE IF provider ownership is unclear THEN move the case into clarification instead of active retention\nELSE mark the user as retained HES customer using Onboarding Completion, Service Active Flag, Provider Status, Billing Status, Retention Status, and Churn Status.",
+          "feature": "mark the user as retained HES customer using Onboarding Completion, Service Active Flag, Provider Status, Billing Status, Retention Status, and Churn Status.",
+          "dataPoints": [
+            "Onboarding Completion",
+            "Service Active Flag",
+            "Provider Status",
+            "Billing Status",
+            "Retention Status",
+            "Churn Status"
+          ],
+          "edgeCases": [
+            "IF onboarding is incomplete THEN do not mark the customer as retained.",
+            "IF service becomes inactive after activation THEN update the case out of active retention.",
+            "IF provider ownership is unclear THEN move the case into clarification instead of active retention."
+          ],
+          "emails": []
+        }
+      ]
+    }
+  ]
+}

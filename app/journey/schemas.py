@@ -70,6 +70,13 @@ class EdgeCreate(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
+class EdgeUpdate(BaseModel):
+    condition: dict | None = None
+    is_fallback: bool | None = None
+    weight: float | None = None
+    metadata: dict | None = None
+
+
 class EdgeRead(BaseModel):
     model_config = {"from_attributes": True}
 
@@ -80,6 +87,7 @@ class EdgeRead(BaseModel):
     condition: dict | None
     is_fallback: bool
     weight: float
+    metadata: dict = Field(default_factory=dict, validation_alias="metadata_")
     created_at: datetime
 
 
