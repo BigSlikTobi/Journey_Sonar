@@ -15,8 +15,8 @@ from app.middleware.error_handling import register_error_handlers
 
 class ApiKeyMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Skip auth for health check and OPTIONS preflight
-        if request.method == "OPTIONS" or request.url.path == "/health":
+        # Only protect API routes — let frontend static files and health check through
+        if request.method == "OPTIONS" or not request.url.path.startswith("/api/"):
             return await call_next(request)
         if settings.api_key:
             key = request.headers.get("X-API-Key", "")
